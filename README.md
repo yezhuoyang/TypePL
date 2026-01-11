@@ -161,7 +161,6 @@ n1 + n2 --> n
 ```
 
 
-
 ```ocaml
  t1 --> t1'
 ---------------------------------------- (E-PLUS1)
@@ -177,7 +176,7 @@ v1 + t2  --> v1 + t2'
 ```ocaml
 n1 [[>]] n2 = b
 ------------------------------------------(E-GT)
-n1>n2 --> b
+n1 > n2 --> b
 ```
 
 ```ocaml
@@ -222,6 +221,33 @@ A term t is *eventually stuck* if it is stuck after 0 or more steps. t -->* t' a
 # Example of derivation by Small Step semantic
 
 
+Assume we want to prove：
+
+```ocaml
+(if (2 + 2 > 1) then (if false then true else false) else false) -->* if false then true else false
+```
+
+
+First we prove (2 + 2 > 1) -->* true:
+
+```ocaml
+                                                      -------------------------------(E-PLUS)
+                                                         2 + 2 --> 4
+---------------------(E-GT)                           -------------------------------(E-GT1)
+4 > 1 --> true                                          2 + 2 > 1 --> 4 + 1
+--------------------(E-STEP)                          -------------------------------(E-STEP)
+4 > 1 -->* true                                        (2 + 2 > 1) -->* 4 > 1
+-------------------------------------------------------------------------------------(E-GT1)
+(2 + 2 > 1) -->* true
+```
+
+Then, we use the transitivity and (E-Step) rule to finish the proof
+
+```ocaml
+(2 + 2 > 1) -->* true
+----------------------------------------------------------------------------------------------(E-IFTRUE, E-Step, E-Trans)
+(if (2 + 2 > 1) then (if false then true else false) else false) -->* if false then true else false
+```
 
 
 # Compile and run
