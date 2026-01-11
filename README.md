@@ -27,47 +27,57 @@ v ::= true | false
 
 Following is the small-step operational semantics for this simple languages:
 
+```ocaml
 -------------------------------- (E-IFTRUE)
 if true then t2 else t3 -> t2
+```
 
-
+```ocaml
 -------------------------------- (E-IFFALSE)
 if false then t2 else t3 -> t3
+```
 
-
+```ocaml
 t1 -> t1'
 ------------------------------------------------(E-IF)
 if t1 then t2 else t3 -> if t1' then t2 else t3
+```
 
-
+```ocaml
 n1 [[+]] n2 = n
 ----------------------------------------------(E-PLUS)
 n1 + n2 -> n
+```
 
+```ocaml
  t1 -> t1'
 ---------------------------------------- (E-PLUS1)
 t1 + t2 -> t1' + t2
+```
 
-
+```ocaml
  t2 -> t2'
 ----------------------------------------- (E-PLUS2)
 v1 + t2  -> v1 + t2'
+```
 
-
+```ocaml
 n1 [[>]] n2 = b
 ------------------------------------------(E-GT)
 n1>n2 -> b
+```
 
-
+```ocaml
 t1 -> t1'
 -------------------------------------------(E-GT1)
 t1 > t2 -> t1' > t2
+```
 
-
+```ocaml
 t2 -> t2'
 --------------------------------------------(E-GT2)
 v1 > t2 -> v1 > t2'
-
+```
 
 
 
