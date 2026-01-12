@@ -17,12 +17,12 @@ let isval t =
 
 (* Problem 1a. *)
 exception NormalForm
+exception Stuck
+
 
 (*This function should perform exactly one small-step reduction based on the operational semantics*)
 let rec step t =
     match t with
-    | True -> True
-    | False -> False
 
     (*E-IFTRUE*)
     | If (True, t2, t3) -> 
@@ -32,11 +32,13 @@ let rec step t =
     | If (False, t2, t3) -> 
         t3
 
+    (*When the condition is a value but is not true of false*)    
+    | If (v1, t2, t3) when isval v1 ->
+        raise Stuck   
+     
     (*E-IF*)
     | If (t1, t2, t3) -> 
         If (step t1, t2, t3)
-
-    | Int n -> Int n
 
     (* E-PLUS: both sides are integers*)
     | Plus (Int n1 , Int n2) ->
@@ -55,35 +57,63 @@ let rec step t =
         if n1 > n2 then True else False
 
     (* E-GT2: Left side is an integer, right side is an expression*)      
-    | Greater (Int n1, t2) ->
-        Greater (Int n1, step t2)
+    | Greater (v1, t2) when isval v1 ->
+        Greater (v1, step t2)
 
     (*E-GT1: Left side is an expression*)
     | Greater (t1 , t2) ->
         Greater (step t1, t2)
 
 
-    | _ -> raise NormalForm
+    | _ ->
+        if isval t then
+            raise NormalForm
+        else
+            raise Stuck
 
     
-
-      
-
 
 
 (* Problem 1b. *)
 
-(*This function use the previous step function to execute a given term t until
-it reaches a normal form(Either a value or a stuck expression*)
-(* let rec eval t =
-    match t with
-    | True -> True
-    | False -> False
-    | If (t1, t2, t3) -> ???
-    | Int n -> t
-    | Plus (t1, t2) -> ???
-    | Greater (t1, t2) -> ??? *)
+(*This function use the previous step function to execute a given term t until it reaches a normal form(Either a value or a stuck expression*)
+let rec eval t =
+    try
+        eval (step t)
+    with
+    | NormalForm -> t
 
+
+
+(*This function evaluate any input term by definition of big step semantic directly*)    
+let rec evalBig t =
+    match t with
+    (*B-True*)
+    | True -> True
+    (*B-False*)
+    | False -> False
+    (*B-Int*)    
+    | Int _ -> t
+
+ 
+    | If (t1, t2, t3) ->
+        (match evalBig t1 with
+            | True -> evalBig t2
+            | False -> evalBig t3
+            | _    -> raise Stuck 
+        )
+
+    | Plus (t1, t2) ->
+        (match (evalBig t1, evalBig t2) with
+            | (Int n1, Int n2) -> Int (n1 + n2)
+            | _ -> raise Stuck
+        )
+
+    | Greater (t1, t2) ->
+        (match (evalBig t1, evalBig t2) with
+            | (Int n1, Int n2) -> if n1 > n2 then True else False
+            | _ -> raise Stuck
+        )
 
 
 (*Test cases*)
@@ -95,7 +125,7 @@ let rec to_string = function
    | False -> "False"
    | Int n -> "Int " ^ string_of_int n
    | If (t1, t2, t3) ->
-       "If (" ^ to_string t1 ^ ", " ^ to_string t2 ^ ", " ^ to_string t2 ^ ")"
+       "If (" ^ to_string t1 ^ ", " ^ to_string t2 ^ ", " ^ to_string t3 ^ ")"
    | Plus (t1, t2) ->
        "Plus (" ^ to_string t1 ^ ", " ^ to_string t2 ^ ")"
    | Greater (t1, t2) ->
@@ -117,7 +147,53 @@ let test_step name term =
       print_endline "output: <ImplementMe raised>";
       print_endline ""
 
-let () =
+
+
+type outcome =
+    | Value of t
+    | RaisedNormalForm
+    | RaisedStuck
+    | RaisedImplementMe
+
+let outcome_to_string = function
+    | Value v -> "Value(" ^ to_string v ^ ")"
+    | RaisedNormalForm -> "<NormalForm>"
+    | RaisedStuck -> "Stuck"
+    | RaisedImplementMe -> "<ImplementMe>"
+
+
+let run_eval f term: outcome =
+    try
+        Value (f term)
+    with
+        | NormalForm -> RaisedNormalForm
+        | Stuck -> RaisedStuck
+        | ImplementMe -> RaisedImplementMe
+
+
+
+
+let test_eval name term = 
+    print_endline ("== " ^ name ^ "==");
+    print_endline ("input: " ^ to_string term);
+
+
+    let out_small = run_eval eval term in
+    let out_big = run_eval evalBig term in
+
+    if out_small = out_big then
+        print_endline ("[PASS] Small-step and big-step agree: " ^ outcome_to_string out_small)
+    else begin
+        print_endline ("[FAIL] mismatch");
+        print_endline ("  small-step: " ^ outcome_to_string out_small);
+        print_endline (" big-step:  "^ outcome_to_string out_big);
+    end;
+
+    print_endline ""
+
+
+
+(* let () =
   test_step "step True" True;
   test_step "step (If True ...)" (If (True, Int 1, Int 2));
   test_step "step (If False ...)" (If (False, Int 1, Int 2));
@@ -138,5 +214,13 @@ let () =
   (* Stuck / Normal form checks *)
   test_step "step Int is NormalForm (if you choose so)" (Int 7);
   test_step "step stuck If (Int ...)" (If (Int 0, Int 1, Int 2));
-  ()
+  () *)
 
+
+
+let () =
+    test_eval "eval If True" (If (True, Int 1, Int 2));
+    test_eval "eval Plus" (Plus (Int 10, Int 32));
+    test_eval "eval nested" (If (Greater (Int 3, Int 2), Plus (Int 1, Int 2), Int 0));
+    test_eval "eval stuck If(Int ...)" (If (Int 0, Int 1, Int 2));
+    ()
