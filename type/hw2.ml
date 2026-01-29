@@ -4,18 +4,20 @@ exception ImplementMe
 type t = True | False | If of t * t * t | Int of int | Plus of t * t | Greater of t * t
 type typ = Bool | Integer
 
-
 (* Problem 1. *)
 exception TypeError
 let rec typecheck t =
     match t with
-
+        (*T-TRUE*)
         | True -> Bool
 
+        (*T-FALSE*)
         | False -> Bool
 
+        (*T-NUM*)
         | Int n -> Integer
 
+        (*T-IF*)
         | If (t1,t2,t3) -> 
             (    
             match typecheck t1 with
@@ -27,8 +29,9 @@ let rec typecheck t =
                                 | (_ , _) -> raise TypeError
                         )
                 | _ -> raise TypeError 
-            )          
+            )   
 
+        (*T-NUM*)
         | Plus (t1, t2) ->
             (    
             match (typecheck t1, typecheck t2) with
@@ -36,6 +39,7 @@ let rec typecheck t =
                 | (_ , _ ) -> raise TypeError
             ) 
 
+        (*T-GT*)
         | Greater (t1, t2) -> 
             (
             match (typecheck t1, typecheck t2) with
